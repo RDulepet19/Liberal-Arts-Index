@@ -281,7 +281,7 @@ def find_and_store_duplicate_syllabi(grid_name, year, field_name):
         # df = df.set_index('id')
         print("\tcandidate pairs found = {}", len(list_candidate_pairs))
         
-        # STEP 1: use TFIDF to process the records associated with the candidate duplicates and generate signature text
+        # STEP 2: use TFIDF to process the records associated with the candidate duplicates and generate signature text
         tf = TfidfVectorizer(analyzer='word', ngram_range=(1,1), min_df = 0, stop_words = 'english')
         tfidf_matrix =  tf.fit_transform(df['text_lower_case_words'])
         feature_names = tf.get_feature_names()
