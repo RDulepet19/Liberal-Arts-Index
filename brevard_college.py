@@ -79,7 +79,7 @@ REGEX_DEPARTMENT_NAME = r'^([A-Z ]+)\s*\([A-Z]+\)\s*$'
 PATTERN_REGEX_DEPARTMENT_NAME = re.compile(REGEX_DEPARTMENT_NAME)
 
 
-REGEX_NEW_COURSE = r'^([A-Z]{3,3} [0-9]{3,3}[A-Z\*\/]{0,1}[0-9]{0,3})\s+([\w \-:\(\)\/&,’]*)\s{2,}([0-9\-]+)\s+Semester Hour'
+REGEX_NEW_COURSE = r'^([A-Z]{3,3} [0-9]{3,3}[A-Z\*\/]{0,1}[0-9]{0,3})\s+([\w \-\.:\(\)\/&,’]*)\s{2,}([0-9\-\.]+)\s+Semester Hour'
 PATTERN_REGEX_NEW_COURSE = re.compile(REGEX_NEW_COURSE, re.IGNORECASE)
 
 REGEX_DOCUMENT_HEADER = r'^\s*[0-9]+\s*$'
