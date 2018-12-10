@@ -33,7 +33,7 @@
 # * `UnitID`	206589
 # * `Name`	The College of Wooster
 
-# In[1]:
+# In[12]:
 
 
 INSTITUTION_ID = '206589'
@@ -67,7 +67,7 @@ CATALOG_URL = 'https://www.wooster.edu/_media/files/academics/catalogue/full/16-
 # * `Departments` is a `list/collection` of `Department`
 # #### Processing Methodology implements the Rules described earlier for parsing each `Department` and each `Course' within it
 
-# In[41]:
+# In[13]:
 
 
 import numpy as np
@@ -97,7 +97,7 @@ REGEX_DOCUMENT_HEADER = r'^\s*[0-9]+\s*$'
 PATTERN_REGEX_DOCUMENT_HEADER = re.compile(REGEX_DOCUMENT_HEADER)
 
 
-# In[42]:
+# In[14]:
 
 
 import json
@@ -167,7 +167,7 @@ class Course:
         self.description += line
 
 
-# In[43]:
+# In[15]:
 
 
 import json
@@ -211,7 +211,7 @@ class Department:
         print ("Number of Courses: %d" % len(self.courses))
 
 
-# In[44]:
+# In[16]:
 
 
 import pandas as pd
@@ -222,11 +222,14 @@ def dump_output(departments, file_to_save):
         for course in department.courses:
             # handle only records with course description, otherwise ignore
             if course.description.strip():
-                df_college.loc[len(df_college)] = [department.institution_id, department.institution_name,                                                    department.catalog_year, department.url,                                                    department.department_name.strip(),                                                    course.code,                                                    course.course_num,                                                    course.description.strip(), course.name.strip(),                                                    course.credit_hours,                                                    course.prerequisites.strip(), course.corequisites.strip(),                                                    course.offerings.strip(),                                                    course.notes.strip(),                                                    course.requirements.strip()]
+                # skip courses that have course description less than 65 characters or
+                # if the course starts with [ or (, then ignore that course
+                if (not re.search('^[\[\(]', course.description)) and (len(course.description) > 65):
+                    df_college.loc[len(df_college)] = [department.institution_id, department.institution_name,                                                        department.catalog_year, department.url,                                                        department.department_name.strip(),                                                        course.code,                                                        course.course_num,                                                        course.description.strip(), course.name.split("(")[0].strip(),                                                        course.credit_hours,                                                        course.prerequisites.strip(), course.corequisites.strip(),                                                        course.offerings.strip(),                                                        course.notes.strip(),                                                        course.requirements.strip()]
     df_college.to_csv(file_to_save, index=False)
 
 
-# In[50]:
+# In[20]:
 
 
 import re, random
@@ -329,7 +332,9 @@ def main():
 
             credit_hours = re.findall(credit_hours_regex, course.description)
             if len(credit_hours) > 0:
-                course.credit_hours = credit_hours[0]
+                # if it doesn't contain any numbers then assume false positive, and ignore
+                if re.search('\d+', str(credit_hours)):
+                    course.credit_hours = credit_hours[0]
 
             meet_requirements = re.findall(requirements_regex, course.description)
             if len(meet_requirements) > 0:
@@ -354,7 +359,7 @@ def main():
                 
 
 
-# In[51]:
+# In[21]:
 
 
 # sampling test
@@ -384,7 +389,7 @@ def run_sample_test(random_department_index, random_course_index):
     print("\tnotes = ", Departments[random_department_index].courses[random_course_index].notes)
 
 
-# In[52]:
+# In[22]:
 
 
 if __name__== "__main__":
@@ -396,65 +401,4 @@ if __name__== "__main__":
 
 
 run_sample_test(-1, -1)
-
-
-# In[49]:
-
-
-test_str = "From the late twelfth to the late fourteenth century, western Christendom grew simultaneously in two very dif- ferent directions. While the papacy became increasingly involved in temporal concerns, often competing with kings and emperors for earthly power, ordinary believers sought more personal means of engaging with their faith. In the cases of more extra-ordinary believers, mystics and pilgrims, extreme physical hardship and the sacrifice of worldly possessions was seen as an avenue toward salvation. This course will explore the nature of these alternative expressions of faith and examine how the popularity and influence of such famous mystics as Francis of Assisi and Catherine of Siena challenged the worldly aspirations of the hierarchy of the Church. Field trips to the Vatican, Assisi, the pilgrim route to Rome, and a working monastery will emphasize the role land- scape and location played in the experience of popular religion. Offered as part of the “Wooster Summer in Tuscany” program. [Pre-1800] [C, R, HSS] Scheduled for Summer 2017."
-
-offerings_regex1 = r"\.\s+([AFSWQ]\w+\s+and\s+[A-Z]\w+)\."
-offerings_regex2 = r"\.*\s+([AFSWQ]\w+)\."
-offerings_regex3 = r"\.\s+([AFSWQ]\w+\s+\w+)\."
-offerings_regex4 = r"\.\s+([AFSWQ]\w+\s+and\/or\s+[A-Z]\w+)\."
-offerings_regex5 = r"\.\s+([AFSWQ]\w+\s+or\s+[A-Z]\w+)\."
-offerings_regex6 = r"Scheduled for (.*?)\."
-offerings_list1 = re.findall(offerings_regex1, test_str)
-print("offerings_list1=",offerings_list1)
-offerings_list2 = re.findall(offerings_regex2, test_str)
-print("offerings_list2=",offerings_list2)
-
-offerings_list3 = re.findall(offerings_regex3, test_str)
-print("offerings_list3=",offerings_list3)
-offerings_list4 = re.findall(offerings_regex4, test_str)
-print("offerings_list4=",offerings_list4)
-offerings_list5 = re.findall(offerings_regex5, test_str)
-print("offerings_list5=",offerings_list5)
-offerings_list6 = re.findall(offerings_regex6, test_str)
-print("offerings_list6=",offerings_list6)
-
-offerings_list1 = [x for x in offerings_list1 if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|[0-9]{4}', x, re.IGNORECASE)]
-offerings_list2 = [x for x in offerings_list2 if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|[0-9]{4}', x, re.IGNORECASE)]
-offerings_list3 = [x for x in offerings_list3 if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|[0-9]{4}', x, re.IGNORECASE)]
-offerings_list4 = [x for x in offerings_list4 if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|[0-9]{4}', x, re.IGNORECASE)]
-offerings_list5 = [x for x in offerings_list5 if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|[0-9]{4}', x, re.IGNORECASE)]
-
-offerings_list = offerings_list1 + offerings_list2 + offerings_list3 + offerings_list4 + offerings_list5
-
-print("offered=", ', '.join(offerings_list))
-
-
-
-# In[22]:
-
-
-test_str = "This course examines the theory, methods, and tools by which biologists attempt to understand and to protect biological habitats and their attendant natural populations of organisms. Topics included demographic and genetic conservation, invasive species, fragmentation and habitat loss, design of nature reserves, management for conservation, and sustainable development within a conservation context. We also examine economic, social, and political pressures that influence conservation decision-making. Laboratory exercises include com- puter simulations, field trips, and group projects. Normally two classroom meetings and one three-hour labo- ratory weekly (1.25 course credits), though may be offered without a laboratory in some years (1.0 course credits). Prerequisite: C- or better in BIOL 20200 or permission of the instructor. Annually. Spring."
-split_str = re.split(';|,|:|\-| and | or | and\/or |\s|as',test_str)
-for item in split_str:
-    if re.search(r'alternate|years|year|available|annually|spring|fall|quarterly|semesterly|semester|quarter|summer|winter|\b[0-9]{4}\b', item):
-        print(item)
-
-
-# In[40]:
-
-
-REGEX_NOT_OFFERINGS = r'Not Offered\s*(.*?)\.'
-test_str="Selected topics or issues for advanced study in human dynamics, rhetorical studies, or media studies. May be taken more than once. Prerequisite: One 200-level COMM course. Sophomore standing. Not offered 2016-2017."
-re.findall(REGEX_NOT_OFFERINGS, test_str, re.IGNORECASE)
-
-
-# In[ ]:
-
-
-
 
