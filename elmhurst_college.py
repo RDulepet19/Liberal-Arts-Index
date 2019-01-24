@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # coding: utf-8
 
 # MIT License
@@ -33,7 +33,7 @@
 # * `UnitID`	144962
 # * `Name`	Elmhurst College
 
-# In[1]:
+# In[9]:
 
 
 INSTITUTION_ID = '144962'
@@ -67,7 +67,7 @@ CATALOG_URL = 'https://www.elmhurst.edu/wp-content/uploads/2018/06/Elmhurst-Coll
 # * `Departments` is a `list/collection` of `Department`
 # #### Processing Methodology implements the Rules described earlier for parsing each `Department` and each `Course' within it
 
-# In[2]:
+# In[10]:
 
 
 import numpy as np
@@ -97,7 +97,7 @@ REGEX_DOCUMENT_HEADER = r'^\s*[0-9]+\s*$'
 PATTERN_REGEX_DOCUMENT_HEADER = re.compile(REGEX_DOCUMENT_HEADER)
 
 
-# In[30]:
+# In[20]:
 
 
 import json
@@ -183,7 +183,7 @@ class Course:
                 self.description += line
 
 
-# In[31]:
+# In[21]:
 
 
 import json
@@ -210,6 +210,7 @@ class Department:
     
     def set_department_name(self, department_name):
         self.department_name = MAP_DEPARTMENTS[department_name]
+        # print("\tMAP_DEPARTMENTS=", self.department_name)
 
     def add_course(self, course):
         self.courses.append(course)
@@ -227,14 +228,14 @@ class Department:
         print ("Number of Courses: %d" % len(self.courses))
 
 
-# In[32]:
+# In[36]:
 
 
 import pandas as pd
       
 def dump_output(departments, file_to_save):
     df_college = pd.DataFrame(columns=['ipeds_id', 'ipeds_name', 'catalog_year', 'url',                                        'subject', 'subject_code', 'course_number', 'description',                                        'course_name', 'credits', 'prereqs', 'corequisites_raw',                                        'offerings_raw', 'notes_raw', 'requirements_raw'])
-    for department in departments:
+    for key, department in Departments.items():
         for course in department.courses:
             # handle only records with course description, otherwise ignore
             course.description = course.description.strip()
@@ -242,7 +243,7 @@ def dump_output(departments, file_to_save):
                 # make sure course name doesn't contain multiple subject codes
                 course.name = course.name.split("(")[0].strip()
                 set_potential_course_codes = set(re.findall(r'\b([A-Z][A-Z\s]*[A-Z]|[A-Z])\b', course.name))
-                all_subject_codes = set(['ART', 'BID', 'BIO', 'BUS', 'ECO', 'CHM', 'COM', 'THE', 'CSD', 'CGE',                                          'CS', 'IS', 'EDU', 'ELM', 'EYC', 'SEC', 'SPE', 'TEL', 'ENG', 'GEO',                                          'HIS', 'HON', 'ICS', 'KIN', 'MTH', 'MEH', 'AME', 'MUS', 'AMB',                                          'AMC', 'AMD', 'AMN', 'NRS', 'PHL', 'AST', 'PHY', 'POL', 'PSY',                                          'REL', 'SOC', 'CJ', 'URB', 'CHN', 'FRN', 'GRM', 'JPN', 'SPN',                                          'WL', 'CPP', 'GIS', 'ISG', 'IT', 'SCM', 'MBA', 'MIT', 'MDS',                                          'MEC', 'MTL', 'AGS', 'MPH', 'MOT', 'HCA', 'MPM', 'APH'])
+                all_subject_codes = set(['ART', 'BID', 'BIO', 'MTH', 'BUS', 'ECO','CHM',                                          'COM', 'THE','CSD','CS','CGE','IS', 'EDU','ELM',                                          'EYC','SEC', 'SPE','TEL', 'ENG','GEO', 'POL', 'HIS',                                          'HON', 'ICS','SOC', 'KIN','MEH', 'AME','MUS', 'AMA', 'AMB',                                          'AMN','AMC', 'AMD','AMG', 'AMH','AMJ', 'AMO','AMP', 'AMS',                                          'AMT', 'AMV','AMW', 'NRS','PHL', 'AST','PHY', 'PSY',                                          'REL', 'CJ','URB', 'ARB','CHN', 'FRN', 'GRM','JPN',                                          'SPN','WL', 'CPP','GIS', 'ISG','IT', 'SCM','MBA','MIT',                                          'MDS', 'MEC','MTL', 'AGS','MPH', 'MOT','HCA', 'MPM', 'APH', 'MAT'])
                 if len(set_potential_course_codes & all_subject_codes) > 0:
                     # skip to next course since it is invalid course
                     continue
@@ -259,7 +260,7 @@ def dump_output(departments, file_to_save):
 
 
 import re, random
-Departments = []
+Departments = {}
 all_departments_found = []
 
 def main():
@@ -270,6 +271,7 @@ def main():
     # keep track of last two lines (to avoid false positives when identifying new course)
     prev_prev_line = ""
     prev_line = ""
+    current_course = None
 
     fname = "Elmhurst-College-Catalog-2018-2019.txt"
     #fname = "temp.txt"
@@ -294,6 +296,7 @@ def main():
                 # so initialize fields for new course
                 # so initialize fields for new department, create new department if it doesn't exist
                 new_department = new_course[0][0].split()[0].strip()
+                # print("new_course=", new_course, "new_department=", new_department)
                 if new_department not in all_departments_found:
                     department = Department(INSTITUTION_ID, INSTITUTION_NAME, CATALOG_YEAR, CATALOG_URL)
                     try:
@@ -301,26 +304,26 @@ def main():
                     except:
                         print("An unexpected error occurred, line=%s" % (line))
                         raise                            
-                    Departments.append(department)
+                    Departments[new_department] = department
                     all_departments_found.append(new_department)
                 # create new course
                 course = Course()
                 course.set_code(new_course[0][0])
                 course.set_name(new_course[0][2])
                 course.set_course_num(new_course[0][1])
+                current_course = course
                 found_new_course = True
                 
-                Departments[len(Departments)-1].courses.append(course)
+                Departments[new_department].courses.append(course)
             else:
                 # irrelevant line or update fields within the current course
-                if len(Departments) > 0 and len(Departments[len(Departments)-1].courses) > 0:
-                    if found_new_course:
-                        # non-empty line, please assume everything is related to course description
-                        Departments[len(Departments)-1].courses[len(Departments[len(Departments)-1].courses)-1].check_and_update_offerings_description_lines(line)
+                if current_course and found_new_course:
+                    # non-empty line, please assume everything is related to course description
+                    current_course.check_and_update_offerings_description_lines(line)
 
     # now iterate through all courses across all departments, and normalize all course
     # descriptions by extracting Prerequisites, Notes, Offerings, Recommendations, Lecture/Labs, 
-    for department in Departments:
+    for key, department in Departments.items():
         for course in department.courses:
             offerings_regex1 = r"\.\s+([AFSWQ]\w+\s+and\s+[A-Z]\w+)\."
             offerings_regex2 = r"\.*\s+([AFSWQ]\w+)\."
@@ -425,5 +428,44 @@ len(lst & all_subject_codes)
 # In[ ]:
 
 
+MAP_DEPARTMENTS["MTH"]
 
+
+# In[32]:
+
+
+class xClass:
+        val = -1;
+        def __init__(self, val):
+            self.val = val
+arrXClass = {}
+a = xClass(10)
+b = xClass(20)
+arrXClass["a"]=a
+arrXClass["b"]=b
+
+
+# In[33]:
+
+
+print(arrXClass)
+
+
+# In[35]:
+
+
+a.val = 40
+for key, obj in arrXClass.items():
+#for obj in arrXClass:
+    print(obj.val)
+
+
+# In[ ]:
+
+
+aa=None
+if aa:
+    print("fund")
+else:
+    print("notfund")
 
